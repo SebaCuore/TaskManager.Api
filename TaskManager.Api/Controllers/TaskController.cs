@@ -9,7 +9,7 @@ namespace TaskManager.Api.Controllers
     public class TaskController : ControllerBase
     {
         [HttpGet]
-        public ActionResult<List<MyTask>> GetTasks()
+        public ActionResult<List<MyTask>> GetAllTasks()
         {
             return Ok(TaskManagerService.GetAllTasks());
         }
