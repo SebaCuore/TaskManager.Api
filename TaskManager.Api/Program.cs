@@ -14,9 +14,11 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<TaskManagerContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<TaskManagerService>();
+
 var app = builder.Build();
 
-TaskManagerService.Initialize();
+//TaskManagerService.Initialize();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

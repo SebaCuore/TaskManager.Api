@@ -1,48 +1,48 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManager.Api.Data;
 using TaskManager.Api.Models;
 
 namespace TaskManager.Api.Services
 {
     public class TaskManagerService
     {
-        private static List<MyTask> _list = new List<MyTask>();
+        private readonly TaskManagerContext _context;
+        //private static List<MyTask> _list = new List<MyTask>();
 
-        public static void Initialize()
+        //public static void Initialize()
+        //{
+        //    _list = FileService.LoadFromFile();
+        //}
+        public TaskManagerService(TaskManagerContext context)
         {
-            _list = FileService.LoadFromFile();
+            _context = context;
         }
 
-        public static MyTask AddTask(string name, Priority priority)
+        public async Task<MyTask> AddTaskAsync(string name, Priority priority)
         {
-            int newId = _list.Count > 0 ? _list.Max(t => t.Id) + 1 : 1;
-            var task = new MyTask(newId, name, false, priority);
-            _list.Add(task);
-
-            FileService.SaveToFile(_list);
-            return task;
+            var newTask = new MyTask(0, name, false, priority);
+            _context.Tasks.Add(newTask);
+            await _context.SaveChangesAsync();
+            return newTask;
         }
 
-        public static List<MyTask> GetAllTasks()
+        public async Task<List<MyTask>> GetAllTasks()
         {
-            return _list;
+            return await _context.Tasks.ToListAsync();
         }
 
-        public static MyTask GetTaskById(int taskId)
+        public async Task<MyTask> GetTaskById(int taskId)
         {
-            int taskIndex = _list.FindIndex(t => t.Id == taskId);
-            if (taskIndex != -1)
-            {
-                return _list[taskIndex];
-            }
-            return null;
+            return await _context.Tasks.FindAsync(taskId);
         }
-        public static bool ModifyTaskState(int id, MyTask updatedTask)
+        public async Task<bool> ModifyTaskState(int id, MyTask updatedTask)
         {
-            var task = GetTaskById(id);
+            var task = await _context.Tasks.FindAsync(id);
             if (task == null)
             {
                 return false;
@@ -50,23 +50,23 @@ namespace TaskManager.Api.Services
             task.Name = updatedTask.Name;
             task.IsCompleted = updatedTask.IsCompleted;
             task.Priority = updatedTask.Priority;
-
-            FileService.SaveToFile(_list);
+            await _context.SaveChangesAsync();
             return true;
 
 
         }
 
-        public static bool DeleteTask(int taskId)
+        public async Task<bool> DeleteTask(int taskId)
         {
-            int taskIndex = _list.FindIndex(t => t.Id == taskId);
-            if (taskIndex != -1)
+            var task = await _context.Tasks.FindAsync(taskId); ;
+            if (task == null)
             {
-                _list.RemoveAt(taskIndex);
-                FileService.SaveToFile(_list);
-                return true;
+                return false;
             }
-            return false;
+            _context.Tasks.Remove(task);
+            await _context.SaveChangesAsync();
+            return true;
         }
+
     }
 }

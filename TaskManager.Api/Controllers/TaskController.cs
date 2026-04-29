@@ -8,16 +8,22 @@ namespace TaskManager.Api.Controllers
     [Route("api/[controller]")]
     public class TaskController : ControllerBase
     {
-        [HttpGet]
-        public ActionResult<List<MyTask>> GetAllTasks()
+        private readonly TaskManagerService _service;
+        public TaskController(TaskManagerService service)
         {
-            return Ok(TaskManagerService.GetAllTasks());
+            _service = service;
+        }
+        [HttpGet]
+        public async Task<ActionResult<List<MyTask>>> GetAllTasks()
+        {
+            var tasks = await _service.GetAllTasks();
+            return Ok(tasks);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<MyTask> GetTask(int id)
+        public async Task<ActionResult<MyTask>> GetTask(int id)
         {
-            var task = TaskManagerService.GetTaskById(id);
+            var task = await _service.GetTaskById(id);
             if (task != null)
             {
                 return Ok(task);
@@ -26,21 +32,26 @@ namespace TaskManager.Api.Controllers
         }
 
         [HttpPost]
-        public ActionResult<MyTask> AddTask(MyTask newTask)
+        public async Task<ActionResult<MyTask>> AddTask(MyTask newTask)
         {
             if (newTask == null)
             {
                 return BadRequest();
             }
 
-            var createdTask = TaskManagerService.AddTask(newTask.Name, newTask.Priority);
+            var createdTask = await _service.AddTaskAsync(newTask.Name, newTask.Priority);
             return CreatedAtAction(nameof(GetTask), new { id = createdTask.Id }, createdTask);
         }
 
         [HttpPut("{id}")]
-        public ActionResult ModifyTaskState(int id, MyTask updatedTask)
+        public async Task<ActionResult> ModifyTaskState(int id, MyTask updatedTask)
         {
-            if (TaskManagerService.ModifyTaskState(id, updatedTask))
+            if (updatedTask.Id != id)
+            {
+                return BadRequest();
+            }
+
+            if (await _service.ModifyTaskState(id, updatedTask))
             {
                 return NoContent();
             }
@@ -48,13 +59,13 @@ namespace TaskManager.Api.Controllers
         }
 
         [HttpDelete("{id}")]
-        public ActionResult DeleteTask(int id)
+        public async Task<ActionResult> DeleteTask(int id)
         {
-            if (TaskManagerService.DeleteTask(id))
+            if (await _service.DeleteTask(id))
             {
                 return NoContent();
             }
-            return BadRequest();
+            return NotFound();
         }
     }
 }
